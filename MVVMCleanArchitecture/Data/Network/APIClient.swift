@@ -2,23 +2,24 @@
 //  APIClient.swift
 //  Data Layer — Network
 //
-//  Generic network client — koi bhi Decodable type fetch kar sakta hai
-//  async/await use kiya hai — modern Swift concurrency
+//  A generic, reusable network client.
+//  Uses async/await — the modern Swift concurrency model.
+//  Can fetch any Decodable type from any URL.
 //
 
 import Foundation
 
-// Custom errors — clear error messages
+// Strongly typed error cases — clear and descriptive
 enum APIError: Error, LocalizedError {
-    case invalidResponse
-    case decodingFailed
-    case serverError(Int)
+    case invalidResponse          // response was not a valid HTTP response
+    case decodingFailed           // JSON could not be decoded into the expected type
+    case serverError(Int)         // server returned a non-2xx status code
 
     var errorDescription: String? {
         switch self {
-        case .invalidResponse:      return "Invalid server response"
-        case .decodingFailed:       return "Failed to decode data"
-        case .serverError(let code): return "Server error: \(code)"
+        case .invalidResponse:         return "Invalid server response."
+        case .decodingFailed:          return "Failed to decode the response data."
+        case .serverError(let code):   return "Server returned error code \(code)."
         }
     }
 }
@@ -27,32 +28,31 @@ final class APIClient {
 
     private let session: URLSession
 
-    // URLSession inject kar sakte hain — testing me mock session de sakte hain
+    // URLSession is injected — allows passing a mock session in unit tests
     init(session: URLSession = .shared) {
         self.session = session
     }
 
-    // Generic fetch function — T koi bhi Decodable type ho sakta hai
-    // Usage: try await client.fetch([UserDTO].self, from: url)
+    // Generic fetch method — T can be any Decodable type
+    // Example: try await client.fetch([UserDTO].self, from: url)
     func fetch<T: Decodable>(_ type: T.Type, from url: URL) async throws -> T {
 
-        // 1. Network request karo
+        // Step 1: Make the network request
         let (data, response) = try await session.data(from: url)
 
-        // 2. HTTP response check karo
+        // Step 2: Validate it is an HTTP response
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
 
-        // 3. Status code check karo — 200...299 success range
+        // Step 3: Check for a successful status code (200–299)
         guard (200...299).contains(httpResponse.statusCode) else {
             throw APIError.serverError(httpResponse.statusCode)
         }
 
-        // 4. JSON decode karo
+        // Step 4: Decode JSON into the requested type
         do {
-            let decoder = JSONDecoder()
-            return try decoder.decode(T.self, from: data)
+            return try JSONDecoder().decode(T.self, from: data)
         } catch {
             throw APIError.decodingFailed
         }

@@ -2,34 +2,33 @@
 //  UsersViewModel.swift
 //  Presentation Layer — ViewModel
 //
-//  🔑 KEY CONCEPT: ViewModel ki responsibilities:
-//  ✅ UseCase call karna
-//  ✅ UI state manage karna (loading, error, data)
-//  ✅ View ko inform karna ke kya dikhaaye
+//  KEY CONCEPT: The ViewModel has three responsibilities:
+//  ✅ Call the UseCase to fetch data
+//  ✅ Manage UI state (loading, error, success)
+//  ✅ Expose that state to the View
 //
-//  ❌ ViewModel nahi karta:
-//  ❌ Network calls directly
-//  ❌ UI code (SwiftUI views)
-//  ❌ Database access
+//  The ViewModel must NOT:
+//  ❌ Make network calls directly
+//  ❌ Contain any SwiftUI view code
+//  ❌ Access the database or APIClient directly
 //
 
 import Foundation
 
-// @Observable → SwiftUI automatically UI update karta hai
-// Koi manual objectWillChange.send() nahi chahiye
+// @Observable — SwiftUI automatically re-renders the View
+// when any stored property changes. No manual sink or objectWillChange needed.
 @Observable
 final class UsersViewModel {
 
     // ── UI State ───────────────────────────────────────────────────────────
-    var users: [User] = []          // list me dikhane ke liye users
-    var isLoading = false           // loading spinner
-    var errorMessage: String?       // error alert message
-    var selectedUser: User?         // tap kiya hua user (navigation ke liye)
+    var users: [User] = []          // the list of users shown in the View
+    var isLoading = false           // controls the loading spinner
+    var errorMessage: String?       // non-nil when an error occurs
 
     // ── Dependencies ───────────────────────────────────────────────────────
-    // UseCases inject hote hain — ViewModel ko nahi pata data kahan se aata hai
+    // The ViewModel receives UseCases — it has no knowledge of the Repository or APIClient.
     private let fetchUsersUseCase: FetchUsersUseCase
-    let fetchPostsUseCase: FetchPostsUseCase   // PostsViewModel ko pass karna hai
+    let fetchPostsUseCase: FetchPostsUseCase   // passed through to PostsViewModel on navigation
 
     init(fetchUsersUseCase: FetchUsersUseCase,
          fetchPostsUseCase: FetchPostsUseCase) {
@@ -39,16 +38,16 @@ final class UsersViewModel {
 
     // ── Actions ────────────────────────────────────────────────────────────
 
-    // View ne .task{ } me yeh call kiya → data fetch karo
+    // Called by the View inside .task{ } when the screen appears.
+    // Calls the UseCase — everything else is handled internally.
     func loadUsers() async {
         isLoading = true
         errorMessage = nil
 
         do {
-            // UseCase call karo — baki sab uska kaam
             users = try await fetchUsersUseCase.execute()
         } catch {
-            // Error ko user-friendly message me convert karo
+            // Convert the technical error into a user-readable message
             errorMessage = error.localizedDescription
         }
 

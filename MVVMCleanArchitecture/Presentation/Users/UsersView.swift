@@ -2,40 +2,44 @@
 //  UsersView.swift
 //  Presentation Layer — View
 //
-//  🔑 KEY CONCEPT: View ki sirf ek responsibility hai
-//  → ViewModel ka state dekho aur dikhaao
-//  → User action ho → ViewModel ko batao
-//  → Koi business logic nahi, koi network call nahi
+//  KEY CONCEPT: The View has only one responsibility:
+//  → Observe the ViewModel's state and render it
+//  → Forward user actions to the ViewModel
+//
+//  The View must NOT contain:
+//  ❌ Business logic
+//  ❌ Network calls
+//  ❌ Data transformation
 //
 
 import SwiftUI
 
 struct UsersView: View {
 
-    // @State → ViewModel ka reference
-    // @Observable ki wajah se changes automatically reflect honge
+    // @State holds the ViewModel reference.
+    // Because ViewModel is @Observable, any property change triggers a re-render.
     @State var viewModel: UsersViewModel
 
     var body: some View {
         NavigationStack {
             Group {
 
-                // ── Loading State ──
+                // Loading state — show a spinner while data is being fetched
                 if viewModel.isLoading {
                     ProgressView("Loading users...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // ── Error State ──
+                // Error state — show a message and a retry button
                 } else if let error = viewModel.errorMessage {
                     errorView(message: error)
 
-                // ── Data State ──
+                // Success state — render the list of users
                 } else {
                     usersList
                 }
             }
             .navigationTitle("Users")
-            // View appear ho → ViewModel ko data load karne kaho
+            // .task runs when the view appears and is automatically cancelled on disappear
             .task {
                 await viewModel.loadUsers()
             }
@@ -46,9 +50,9 @@ struct UsersView: View {
     var usersList: some View {
         List(viewModel.users, id: \.id) { user in
 
-            // NavigationLink → tap karo → PostsView khule
+            // Tapping a row navigates to PostsView for that user.
+            // A new PostsViewModel is created with the shared UseCase.
             NavigationLink {
-                // PostsViewModel banao aur inject karo
                 PostsView(
                     user: user,
                     viewModel: PostsViewModel(fetchPostsUseCase: viewModel.fetchPostsUseCase)
@@ -85,20 +89,20 @@ struct UsersView: View {
 }
 
 // ── User Row ───────────────────────────────────────────────────────────────
-// Alag component — reusable, clean
+// Extracted into a separate component — keeps UsersView clean and reusable.
 struct UserRowView: View {
     let user: User
 
     var body: some View {
         HStack(spacing: 12) {
 
-            // Avatar — initials se
+            // Avatar using the first letter of the user's name
             ZStack {
                 Circle()
                     .fill(Color.blue.opacity(0.15))
                     .frame(width: 46, height: 46)
 
-                Text(user.name.prefix(1))  // pehla letter
+                Text(user.name.prefix(1))
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundStyle(.blue)

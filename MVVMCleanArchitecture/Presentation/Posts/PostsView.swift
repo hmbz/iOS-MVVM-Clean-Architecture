@@ -2,23 +2,26 @@
 //  PostsView.swift
 //  Presentation Layer — View
 //
+//  Displays all posts belonging to a selected User.
+//  Follows the same state-driven rendering pattern as UsersView.
+//
 
 import SwiftUI
 
 struct PostsView: View {
 
-    let user: User
+    let user: User                   // the selected user passed from UsersView
     @State var viewModel: PostsViewModel
 
     var body: some View {
         Group {
 
-            // ── Loading ──
+            // Loading state
             if viewModel.isLoading {
                 ProgressView("Loading posts...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // ── Error ──
+            // Error state
             } else if let error = viewModel.errorMessage {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle")
@@ -29,19 +32,19 @@ struct PostsView: View {
                 }
                 .padding()
 
-            // ── Empty ──
+            // Empty state — user exists but has no posts
             } else if viewModel.posts.isEmpty {
-                Text("No posts found")
+                Text("No posts found for this user.")
                     .foregroundStyle(.secondary)
 
-            // ── Data ──
+            // Success state — render the posts list
             } else {
                 postsList
             }
         }
         .navigationTitle("\(user.name)'s Posts")
         .navigationBarTitleDisplayMode(.inline)
-        // View appear ho → posts load karo
+        // Fetch posts when this screen appears, using the selected user's ID
         .task {
             await viewModel.loadPosts(for: user.id)
         }
@@ -52,7 +55,7 @@ struct PostsView: View {
         List(viewModel.posts, id: \.id) { post in
             VStack(alignment: .leading, spacing: 6) {
 
-                // Post number badge + title
+                // Post number badge alongside the title
                 HStack(alignment: .top, spacing: 8) {
                     Text("#\(post.id)")
                         .font(.caption)
@@ -68,7 +71,7 @@ struct PostsView: View {
                         .lineLimit(2)
                 }
 
-                // Post body
+                // Post body — truncated to 3 lines in the list
                 Text(post.body)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

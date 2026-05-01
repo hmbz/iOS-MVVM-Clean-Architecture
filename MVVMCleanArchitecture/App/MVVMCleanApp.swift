@@ -11,18 +11,20 @@ struct MVVMCleanApp: App {
     var body: some Scene {
         WindowGroup {
 
-            // Dependency Injection — yahan sab kuch wire karte hain
-            // View ko seedha Repository nahi dete — UseCase ke zariye dete hain
-            // Is se har layer apni responsibility pe focused rehti hai
+            // Dependency Injection — all dependencies are wired here at the app level.
+            // The View never directly touches the Repository.
+            // Everything flows through the UseCase — keeping each layer independent.
 
-            let apiClient    = APIClient()                          // Network
-            let repository   = UserRepository(apiClient: apiClient) // Data
-            let fetchUsers   = FetchUsersUseCase(repository: repository)  // Domain
-            let fetchPosts   = FetchPostsUseCase(repository: repository)  // Domain
+            let apiClient  = APIClient()                                // Network layer
+            let repository = UserRepository(apiClient: apiClient)       // Data layer
+            let fetchUsers = FetchUsersUseCase(repository: repository)  // Domain layer
+            let fetchPosts = FetchPostsUseCase(repository: repository)  // Domain layer
 
             UsersView(
-                viewModel: UsersViewModel(fetchUsersUseCase: fetchUsers,
-                                          fetchPostsUseCase: fetchPosts)
+                viewModel: UsersViewModel(
+                    fetchUsersUseCase: fetchUsers,
+                    fetchPostsUseCase: fetchPosts
+                )
             )
         }
     }
