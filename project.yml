@@ -1,0 +1,20 @@
+name: MVVMCleanArchitecture
+options:
+  bundleIdPrefix: com.bilal
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "15.0"
+
+targets:
+  MVVMCleanArchitecture:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MVVMCleanArchitecture
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bilal.MVVMCleanArchitecture
+        SWIFT_VERSION: 5.9
+        DEVELOPMENT_TEAM: ""
+        INFOPLIST_FILE: MVVMCleanArchitecture/Info.plist
